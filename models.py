@@ -53,7 +53,9 @@ class OrderProducts(Base):
     product_id: Mapped[int] = mapped_column(ForeignKey('products.id'), primary_key=True)
     
 class Admin(User):
-    __tablename__ = 'admins'
+    __tablename__ = "admins"
+
+    id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
 
 
 async def init_db():

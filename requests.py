@@ -1,13 +1,10 @@
-from sqlalchemy import select, update, delete, func
+from sqlalchemy import select
 from models import async_session, User, Order, Product
 from pydantic import BaseModel, ConfigDict
 from datetime import date
 from decimal import Decimal
 from typing import List, Optional
-from main import CreateOrder, CreateProduct
-from models import OrderOut, ProductOut
-
-
+from schemas import ProductOut, OrderOut
 
 class BaseModelWithConfig(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -34,7 +31,6 @@ class OrderSchema(BaseModelWithConfig):
     email: str
     phone: str
   
-#добавление пользователя  
 async def add_user(tg_id) -> User:
     async with async_session() as session:
         user = await session.scalar(select(User).where(User.tg_id == tg_id))
@@ -47,7 +43,6 @@ async def add_user(tg_id) -> User:
         await session.refresh(new_user)
         return new_user
 
-#получение заказов пользователя
 async def get_orders(user) -> List[OrderOut]:
     async with async_session() as session:
         orders = await session.scalars(
@@ -55,15 +50,12 @@ async def get_orders(user) -> List[OrderOut]:
         )
         return [OrderOut.model_validate(order) for order in orders]
 
-#получение всех товаров
 async def get_all_products() -> List[ProductOut]:
     async with async_session() as session:
         result = await session.execute(select(Product))
         products = result.scalars().all()
         return [ProductOut.model_validate(p) for p in products]
 
-
-#создание нового заказа
 async def create_order(
     user: int,
     timestamp: Optional[date],
@@ -76,17 +68,13 @@ async def create_order(
     phone: str
 ) -> None:
     async with async_session() as session:
-        # Получаем продукты
         result = await session.execute(select(Product).where(Product.id.in_(product_ids)))
         products = result.scalars().all()
 
         if not products:
             raise ValueError("Продукты не найдены")
 
-        # Считаем итоговую сумму
         total_sum = sum([p.price for p in products])
-
-        # Устанавливаем дату
         order_date = timestamp or date.today()
 
         new_order = Order(
@@ -104,8 +92,6 @@ async def create_order(
         session.add(new_order)
         await session.commit()
 
-
-#создание нового товара        
 async def create_product(
     title: str,
     category: str,
@@ -113,21 +99,19 @@ async def create_product(
     size: int,
     color: str,
     quantity: int
-    ) -> None:
-        async with async_session() as session:
-            new_product = Product(
-                title=title,
-                category=category,
-                price=price,
-                size=size,
-                color=color,
-                quantity=quantity
-            )
-            
-            session.add(new_product)
-            await session.commit()
+) -> None:
+    async with async_session() as session:
+        new_product = Product(
+            title=title,
+            category=category,
+            price=price,
+            size=size,
+            color=color,
+            quantity=quantity
+        )
+        session.add(new_product)
+        await session.commit()
 
-# Обновление заказа (отметить как завершённый)
 async def update_order(order_id: int) -> None:
     async with async_session() as session:
         order = await session.scalar(select(Order).where(Order.id == order_id))
@@ -135,10 +119,9 @@ async def update_order(order_id: int) -> None:
             order.completed = True
             await session.commit()
 
-# Обновление продукта (например, скрыть или архивировать)
 async def update_product(product_id: int) -> None:
     async with async_session() as session:
         product = await session.scalar(select(Product).where(Product.id == product_id))
         if product:
-            product.quantity = 0  # можно поставить логику удаления или "в архив"
+            product.quantity = 0
             await session.commit()
