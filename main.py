@@ -9,6 +9,16 @@ from models import init_db
 import requests as rq
 from schemas import CreateOrder, CreateProduct, CompleteOrder, CompleteProduct, ProductOut, OrderOut, UpdateProduct
 
+import os
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "main:app",  # имя файла:имя переменной с FastAPI
+        host="0.0.0.0",
+        port=int(os.getenv("PORT", 8000))
+    )
+
 @asynccontextmanager
 async def lifespan(app_: FastAPI):
     await init_db()
