@@ -1,12 +1,13 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import date
 from typing import List
+from admin import router as admin_router
 
 from models import init_db
 import requests as rq
-from schemas import CreateOrder, CreateProduct, CompleteOrder, CompleteProduct, ProductOut, OrderOut
+from schemas import CreateOrder, CreateProduct, CompleteOrder, CompleteProduct, ProductOut, OrderOut, UpdateProduct
 
 @asynccontextmanager
 async def lifespan(app_: FastAPI):
@@ -15,14 +16,28 @@ async def lifespan(app_: FastAPI):
     yield
 
 app = FastAPI(title="To Do App", lifespan=lifespan)
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=['*'],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+class CustomCORSMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        response.headers["Access-Control-Allow-Origin"] = "https://botminiapp-55dd0.web.app"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        return response
+
+app.add_middleware(CustomCORSMiddleware)
+
+
+
+
+app.include_router(admin_router)
+@app.get("/api/users/{tg_id}")
+async def add_user_route(tg_id: int):
+    user = await rq.add_user(tg_id)
+    return user
 
 @app.get("/api/orders/{tg_id}", response_model=List[OrderOut])
 async def get_user_orders(tg_id: int):
@@ -32,6 +47,13 @@ async def get_user_orders(tg_id: int):
 @app.get("/api/products", response_model=List[ProductOut])
 async def get_products():
     return await rq.get_all_products()
+
+@app.get("/api/is-admin/{tg_id}")
+async def is_admin(tg_id: int):
+    user = await rq.add_user(tg_id)
+    if user.role == "admin":
+        return {"isAdmin": True}
+    return {"isAdmin": False}
 
 @app.post("/api/order/create")
 async def create_order(order: CreateOrder):
@@ -80,3 +102,25 @@ async def complete_product(product: CompleteProduct):
         raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
     await rq.update_product(product.id)
     return {'status': 'ok'}
+
+@app.patch("/api/product/update")
+async def update_product(product: UpdateProduct = Body(...)):
+    user = await rq.add_user(product.tg_id)
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
+    
+    await rq.update_product_data(product)
+    return {"status": "updated"}
+
+@app.get("/api/product/{product_id}", response_model=ProductOut)
+async def get_product(product_id: int):
+    async with async_session() as session:
+        result = await session.execute(select(Product).where(Product.id == product_id))
+        product = result.scalar_one_or_none()
+        if not product:
+            raise HTTPException(status_code=404, detail="Product not found")
+        return ProductOut.model_validate(product)
+
+
+
+

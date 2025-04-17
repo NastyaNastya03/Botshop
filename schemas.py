@@ -21,12 +21,27 @@ class CreateProduct(BaseModel):
     size: int
     color: str
     quantity: int
+    image_url: Optional[str]
+    
 
 class CompleteOrder(BaseModel):
     id: int
 
 class CompleteProduct(BaseModel):
     id: int
+
+class UpdateProduct(BaseModel):
+    id: int
+    title: str
+    category: str
+    price: float
+    size: int
+    color: str
+    quantity: int
+    image_url: Optional[str] = None
+    tg_id: int
+
+
 
 class ProductOut(BaseModel):
     id: int
@@ -36,6 +51,9 @@ class ProductOut(BaseModel):
     size: int
     color: str
     quantity: int
+    image_url: Optional[str] = None
+    class Config:
+        from_attributes = True
 
 class OrderOut(BaseModel):
     id: int
@@ -49,3 +67,5 @@ class OrderOut(BaseModel):
     quantity: int
     email: str
     phone: str
+    class Config:
+        from_attributes = True

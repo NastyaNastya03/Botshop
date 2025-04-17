@@ -2,7 +2,7 @@ from sqlalchemy import ForeignKey, String, BigInteger, Numeric, Date, Integer
 from sqlalchemy.orm import Mapped, DeclarativeBase, mapped_column, relationship
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 from config import settings
-
+from typing import Optional
 
 engine = create_async_engine(settings.DATABASE_URL, echo=True)
 async_session = async_sessionmaker(bind=engine, expire_on_commit=False)
@@ -29,6 +29,7 @@ class Product(Base):
     size: Mapped[int] = mapped_column(Integer)
     color: Mapped[str] = mapped_column(String(40))
     quantity: Mapped[int] = mapped_column(Integer)
+    image_url: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
 class Order(Base):
     __tablename__ = 'orders'

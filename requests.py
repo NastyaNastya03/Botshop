@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict
 from datetime import date
 from decimal import Decimal
 from typing import List, Optional
-from schemas import ProductOut, OrderOut
+from schemas import ProductOut, OrderOut, UpdateProduct
 
 class BaseModelWithConfig(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -119,9 +119,26 @@ async def update_order(order_id: int) -> None:
             order.completed = True
             await session.commit()
 
-async def update_product(product_id: int) -> None:
+async def update_product_data(product_data: UpdateProduct):
     async with async_session() as session:
-        product = await session.scalar(select(Product).where(Product.id == product_id))
-        if product:
-            product.quantity = 0
-            await session.commit()
+        values = {
+            "title": product_data.title,
+            "category": product_data.category,
+            "price": product_data.price,
+            "size": product_data.size,
+            "color": product_data.color,
+            "quantity": product_data.quantity,
+        }
+
+        if product_data.image_url is not None:
+            values["image_url"] = product_data.image_url
+
+        stmt = (
+            update(Product)
+            .where(Product.id == product_data.id)
+            .values(**values)
+        )
+
+        await session.execute(stmt)
+        await session.commit()
+
