@@ -4,6 +4,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from datetime import date
 from typing import List
 from admin import router as admin_router
+from models import async_session
+from sqlalchemy import select
+from models import Product
+
 
 from models import init_db
 import requests as rq
