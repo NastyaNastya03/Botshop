@@ -9,8 +9,6 @@ from models import init_db
 import requests as rq
 from schemas import CreateOrder, CreateProduct, CompleteOrder, CompleteProduct, ProductOut, OrderOut, UpdateProduct
 
-import os
-
 @asynccontextmanager
 async def lifespan(app_: FastAPI):
     await init_db()
@@ -28,18 +26,10 @@ app.add_middleware(
 )
 app.include_router(admin_router)
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(
-        "main:app",  # имя файла:имя переменной с FastAPI
-        host="0.0.0.0",
-        port=int(os.getenv("PORT", 8000))
-    )
+@app.get("/api/test-cors")
+def test_cors():
+    return {"status": "ok"}
 
-
-
-
-app.include_router(admin_router)
 @app.get("/api/users/{tg_id}")
 async def add_user_route(tg_id: int):
     user = await rq.add_user(tg_id)
@@ -128,5 +118,12 @@ async def get_product(product_id: int):
         return ProductOut.model_validate(product)
 
 
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "main:app",  # имя файла:имя переменной с FastAPI
+        host="0.0.0.0",
+        port=int(os.getenv("PORT", 8000))
+    )
 
 
