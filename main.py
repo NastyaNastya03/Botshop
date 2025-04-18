@@ -11,14 +11,6 @@ from schemas import CreateOrder, CreateProduct, CompleteOrder, CompleteProduct, 
 
 import os
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(
-        "main:app",  # имя файла:имя переменной с FastAPI
-        host="0.0.0.0",
-        port=int(os.getenv("PORT", 8000))
-    )
-
 @asynccontextmanager
 async def lifespan(app_: FastAPI):
     await init_db()
@@ -26,19 +18,23 @@ async def lifespan(app_: FastAPI):
     yield
 
 app = FastAPI(title="To Do App", lifespan=lifespan)
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import Response
 
-class CustomCORSMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request, call_next):
-        response = await call_next(request)
-        response.headers["Access-Control-Allow-Origin"] = "https://botminiapp-55dd0.web.app"
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "*"
-        response.headers["Access-Control-Allow-Credentials"] = "true"
-        return response
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://botminiapp-55dd0.web.app"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+app.include_router(admin_router)
 
-app.add_middleware(CustomCORSMiddleware)
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "main:app",  # имя файла:имя переменной с FastAPI
+        host="0.0.0.0",
+        port=int(os.getenv("PORT", 8000))
+    )
 
 
 
