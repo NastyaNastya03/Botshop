@@ -8,6 +8,7 @@ from admin import router as admin_router
 from models import init_db
 import requests as rq
 from schemas import CreateOrder, CreateProduct, CompleteOrder, CompleteProduct, ProductOut, OrderOut, UpdateProduct
+import os
 
 @asynccontextmanager
 async def lifespan(app_: FastAPI):
