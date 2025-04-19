@@ -31,6 +31,11 @@ app.add_middleware(
 )
 app.include_router(admin_router)
 
+@app.get("/")
+async def root():
+    return {"message": "Сервис работает"}
+
+
 @app.get("/api/test-cors")
 def test_cors():
     return {"status": "ok"}
