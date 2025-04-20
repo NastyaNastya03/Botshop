@@ -4,10 +4,8 @@ from models import async_session, Product
 import csv
 from io import StringIO
 from decimal import Decimal
-import logging
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
 
 @router.post("/upload-products")
 async def upload_products(file: UploadFile = File(...)):
@@ -20,15 +18,20 @@ async def upload_products(file: UploadFile = File(...)):
             decoded = contents.decode('utf-8-sig')
         except UnicodeDecodeError:
             decoded = contents.decode('utf-8')
-    
-        reader = csv.DictReader(StringIO(decoded))
+
+        # Автоопределение разделителя
+        sample = decoded[:1024]
+        delimiter = ';' if sample.count(';') > sample.count(',') else ','
+
+        reader = csv.DictReader(StringIO(decoded), delimiter=delimiter)
+        required_fields = ['title', 'category', 'price', 'size', 'color', 'quantity']
+
         products = []
-    
         for row in reader:
             try:
-                required_fields = ['title', 'category', 'price', 'size', 'color', 'quantity']
+                # Проверка наличия обязательных полей
                 for field in required_fields:
-                    if field not in row or not row[field].strip():
+                    if not row.get(field):
                         raise HTTPException(status_code=400, detail=f"Отсутствует поле: {field}")
 
                 product = Product(
@@ -43,14 +46,14 @@ async def upload_products(file: UploadFile = File(...)):
                 products.append(product)
             except Exception as e:
                 raise HTTPException(status_code=400, detail=f"Ошибка в строке: {row} — {e}")
-    
+
         async with async_session() as session:
-            session: AsyncSession  # Подсветка в IDE
+            session: AsyncSession
             session.add_all(products)
             await session.commit()
-    
+
         return {"addedCount": len(products)}
-    
+
     except Exception as e:
-        logger.exception("Ошибка при загрузке CSV")
         raise HTTPException(status_code=500, detail=f"Ошибка обработки CSV: {e}")
+
