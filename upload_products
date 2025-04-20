@@ -2,8 +2,8 @@
 
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.database import get_async_session
-from app.models import Product
+from database import get_async_session
+from models.py import Product
 import csv
 from io import StringIO
 from decimal import Decimal
