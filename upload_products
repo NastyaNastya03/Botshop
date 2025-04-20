@@ -1,4 +1,4 @@
-# app/routes/upload_products.py
+
 
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
