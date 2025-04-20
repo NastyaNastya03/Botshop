@@ -25,7 +25,7 @@ class Product(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String(40))
     category: Mapped[str] = mapped_column(String(40))
-     price: Mapped[Decimal] = mapped_column(Numeric(10, 2))
+    price: Mapped[Decimal] = mapped_column(Numeric(10, 2))
     size: Mapped[int] = mapped_column(Integer)
     color: Mapped[str] = mapped_column(String(40))
     quantity: Mapped[int] = mapped_column(Integer)
