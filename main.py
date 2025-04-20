@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from datetime import date
 from typing import List
 from admin import router as admin_router
-from app.routes.upload_products import router as upload_router
+from upload_products import router as upload_router
 from models import async_session
 from sqlalchemy import select
 from models import Product
