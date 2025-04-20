@@ -4,8 +4,10 @@ from models import async_session, Product
 import csv
 from io import StringIO
 from decimal import Decimal
+import logging
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 @router.post("/upload-products")
 async def upload_products(file: UploadFile = File(...)):
@@ -24,6 +26,11 @@ async def upload_products(file: UploadFile = File(...)):
     
         for row in reader:
             try:
+                required_fields = ['title', 'category', 'price', 'size', 'color', 'quantity']
+                for field in required_fields:
+                    if field not in row or not row[field].strip():
+                        raise HTTPException(status_code=400, detail=f"Отсутствует поле: {field}")
+
                 product = Product(
                     title=row['title'],
                     category=row['category'],
@@ -38,11 +45,12 @@ async def upload_products(file: UploadFile = File(...)):
                 raise HTTPException(status_code=400, detail=f"Ошибка в строке: {row} — {e}")
     
         async with async_session() as session:
-            session: AsyncSession  # типизация для подсветки в IDE
+            session: AsyncSession  # Подсветка в IDE
             session.add_all(products)
             await session.commit()
     
         return {"addedCount": len(products)}
     
     except Exception as e:
+        logger.exception("Ошибка при загрузке CSV")
         raise HTTPException(status_code=500, detail=f"Ошибка обработки CSV: {e}")
