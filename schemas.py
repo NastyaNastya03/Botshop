@@ -34,7 +34,7 @@ class UpdateProduct(BaseModel):
     id: int
     title: str
     category: str
-    price: float
+    price: Decimal
     size: int
     color: str
     quantity: int
