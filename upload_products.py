@@ -1,9 +1,6 @@
-
-
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from models import async_session
-from models import Product
+from models import async_session, Product
 import csv
 from io import StringIO
 from decimal import Decimal
@@ -11,10 +8,7 @@ from decimal import Decimal
 router = APIRouter()
 
 @router.post("/upload-products")
-async def upload_products(
-    file: UploadFile = File(...),
-    session: AsyncSession = Depends(get_async_session)
-):
+async def upload_products(file: UploadFile = File(...)):
     if not file.filename.endswith('.csv'):
         raise HTTPException(status_code=400, detail="Файл должен быть .csv")
 
@@ -39,8 +33,10 @@ async def upload_products(
             except Exception as e:
                 raise HTTPException(status_code=400, detail=f"Ошибка в строке: {row} — {e}")
 
-        session.add_all(products)
-        await session.commit()
+        async with async_session() as session:
+            session: AsyncSession  # типизация для подсветки в IDE
+            session.add_all(products)
+            await session.commit()
 
         return {"addedCount": len(products)}
 
