@@ -1,0 +1,48 @@
+# app/routes/upload_products.py
+
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.database import get_async_session
+from app.models import Product
+import csv
+from io import StringIO
+from decimal import Decimal
+
+router = APIRouter()
+
+@router.post("/upload-products")
+async def upload_products(
+    file: UploadFile = File(...),
+    session: AsyncSession = Depends(get_async_session)
+):
+    if not file.filename.endswith('.csv'):
+        raise HTTPException(status_code=400, detail="Файл должен быть .csv")
+
+    contents = await file.read()
+    try:
+        decoded = contents.decode('utf-8')
+        reader = csv.DictReader(StringIO(decoded))
+        products = []
+
+        for row in reader:
+            try:
+                product = Product(
+                    title=row['title'],
+                    category=row['category'],
+                    price=Decimal(row['price']),
+                    size=int(row['size']),
+                    color=row['color'],
+                    quantity=int(row['quantity']),
+                    image_url=row.get('image_url') or None
+                )
+                products.append(product)
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Ошибка в строке: {row} — {e}")
+
+        session.add_all(products)
+        await session.commit()
+
+        return {"addedCount": len(products)}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ошибка обработки CSV: {e}")
