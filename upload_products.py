@@ -14,16 +14,20 @@ async def upload_products(file: UploadFile = File(...)):
 
     contents = await file.read()
     try:
-        decoded = contents.decode('utf-8')
+        try:
+            decoded = contents.decode('utf-8-sig')
+        except UnicodeDecodeError:
+            decoded = contents.decode('utf-8')
+    
         reader = csv.DictReader(StringIO(decoded))
         products = []
-
+    
         for row in reader:
             try:
                 product = Product(
                     title=row['title'],
                     category=row['category'],
-                    price=Decimal(row['price']),
+                    price=Decimal(row['price'].strip()),
                     size=int(row['size']),
                     color=row['color'],
                     quantity=int(row['quantity']),
@@ -32,13 +36,13 @@ async def upload_products(file: UploadFile = File(...)):
                 products.append(product)
             except Exception as e:
                 raise HTTPException(status_code=400, detail=f"Ошибка в строке: {row} — {e}")
-
+    
         async with async_session() as session:
             session: AsyncSession  # типизация для подсветки в IDE
             session.add_all(products)
             await session.commit()
-
+    
         return {"addedCount": len(products)}
-
+    
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ошибка обработки CSV: {e}")
