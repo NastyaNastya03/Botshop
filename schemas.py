@@ -5,7 +5,7 @@ from decimal import Decimal
 
 class CreateOrder(BaseModel):
     tg_id: int
-    product_ids: List[int]
+    items: List[OrderItem]
     quantity: int
     shipping_address: str
     city: str
