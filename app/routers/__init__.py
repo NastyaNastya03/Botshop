@@ -1,11 +1,15 @@
-from fastapi import APIRouter
-from .admin import router as admin_router
+from .user import router as user_router
+from .product import router as product_router
 from .order import router as order_router
+from .healthcheck import router as healthcheck_router
+from .admin import router as admin_router
 from .upload import router as upload_router
 
-router = APIRouter()
-router.include_router(admin_router)
-router.include_router(order_router)
-router.include_router(upload_router)
-
-__all__ = ["router"]
+routers = [
+    user_router,
+    product_router,
+    order_router,
+    healthcheck_router,
+    admin_router,
+    upload_router
+]
