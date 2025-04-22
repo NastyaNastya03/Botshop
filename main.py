@@ -5,9 +5,10 @@ from datetime import date
 from typing import List
 from admin import router as admin_router
 from upload_products import router as upload_router
-from models import async_session
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from models import Product
+from models import get_async_session 
 
 
 from models import init_db
@@ -64,7 +65,7 @@ async def is_admin(tg_id: int):
     return {"isAdmin": False}
 
 @app.post("/api/order/create")
-async def create_order(order: CreateOrder):
+async def create_order(order: CreateOrder, session: AsyncSession = Depends(get_async_session)):
     
     await rq.create_order(
         tg_id=order.tg_id,
@@ -108,12 +109,12 @@ async def complete_product(product: CompleteProduct):
     return {'status': 'ok'}
 
 @app.patch("/api/product/update")
-async def update_product(product: UpdateProduct = Body(...)):
+async def update_product(product: UpdateProduct, session: AsyncSession = Depends(get_async_session)):
     user = await rq.add_user(product.tg_id)
     if user.role != "admin":
         raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
     
-    await rq.update_product_data(product)
+    await rq.update_product_data(product, session)
     return {"status": "updated"}
 
 @app.get("/api/product/{product_id}", response_model=ProductOut)
