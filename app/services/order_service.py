@@ -18,16 +18,7 @@ async def get_orders(
     )
     return result.all()
 
-async def create_order(
-    session: AsyncSession,
-    tg_id: int,
-    items: list[OrderItem],
-    shipping_address: str,
-    city: str,
-    payment_method: str,
-    notes: str | None = None,
-    timestamp: date | None = None
-) -> Order:
+async def create_order(self, order_data: OrderCreate) -> OrderOut:
     """Создание нового заказа"""
     from app.services.user_service import add_user
     
@@ -92,3 +83,4 @@ async def update_order(
     if order:
         order.completed = True
         await session.commit()
+        pass
