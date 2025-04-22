@@ -7,6 +7,10 @@ from fastapi import HTTPException
 from app.models import Order, OrderProducts
 from app.schemas.order import OrderItem
 
+class OrderService:
+    def __init__(self, db: AsyncSession):
+        self.db = db
+
 async def get_orders(
     session: AsyncSession,
     user_id: int,
