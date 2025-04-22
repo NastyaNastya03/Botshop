@@ -7,8 +7,9 @@ from admin import router as admin_router
 from upload_products import router as upload_router
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from models import Product
-from models import get_async_session 
+from app.models import User, Product, Order
+from app.db import get_async_session
+
 
 
 from models import init_db
