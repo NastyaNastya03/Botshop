@@ -64,22 +64,46 @@ async def is_admin(tg_id: int):
     return {"isAdmin": False}
 
 @app.post("/api/order/create")
-async def create_order(order: CreateOrder):
+async def create_order(order: CreateOrder, session: AsyncSession = Depends(get_async_session)):
+    
     user = await rq.add_user(order.tg_id)
-    try:
-        await rq.create_order(
-            user=user.id,
-            timestamp=order.timestamp or date.today(),
-            product_ids=order.product_ids,
-            shipping_address=order.shipping_address,
-            city=order.city,
-            payment_method=order.payment_method,
-            quantity=order.quantity,
-            email="example@example.com",  # можно сделать order.email в будущем
-            phone="79998887766"
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+
+    
+    product_ids = [item['id'] for item in order.items]
+    stmt = select(Product).where(Product.id.in_(product_ids))
+    result = await session.execute(stmt)
+    products = result.scalars().all()
+
+    
+    products_map = {p.id: p for p in products}
+    for item in order.items:
+        product = products_map.get(item['id'])
+        if not product:
+            raise HTTPException(status_code=400, detail=f"Товар {item['id']} не найден")
+        if product.quantity < item['quantity']:
+            raise HTTPException(status_code=400, detail=f"Недостаточно товара: {product.title}")
+    for item in order.items:
+        product = products_map[item['id']]
+        product.quantity -= item['quantity']
+    total = sum(products_map[i['id']].price * i['quantity'] for i in order.items)
+    new_order = Order(
+        user=user.id,
+        timestamp=order.timestamp or date.today(),
+        order_sum=total,
+        shipping_address=order.shipping_address,
+        city=order.city,
+        payment_method=order.payment_method,
+        quantity=sum(item['quantity'] for item in order.items),
+        email="example@example.com",
+        phone="79998887766"
+    )
+    session.add(new_order)
+    await session.flush()  
+    for item in order.items:
+        op = OrderProducts(order_id=new_order.id, product_id=item['id'], quantity=item['quantity'])
+        session.add(op)
+
+    await session.commit()
     return {"status": "ok"}
 
 @app.post("/api/product/create")
