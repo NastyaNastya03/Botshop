@@ -75,7 +75,7 @@ async def create_order(order: CreateOrder, session: AsyncSession = Depends(get_a
         payment_method=order.payment_method,
         notes=order.notes,
         timestamp=order.timestamp,
-        async_session=session
+        session=session 
     )
     return {"status": "ok"}
 
