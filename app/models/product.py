@@ -1,8 +1,8 @@
-from sqlalchemy import String, Numeric, Integer
+from sqlalchemy import Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
-from . import Base
-from decimal import Decimal
 from typing import Optional
+from decimal import Decimal
+from .base import Base
 
 class Product(Base):
     __tablename__ = 'products'
