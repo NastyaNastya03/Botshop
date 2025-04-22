@@ -11,29 +11,18 @@ async def get_all_products(session: AsyncSession) -> list[Product]:
     return result.scalars().all()
 
 async def create_product(
-    session: AsyncSession,
-    title: str,
-    category: str,
-    price: Decimal,
-    size: int,
-    color: str,
-    quantity: int,
-    image_url: str | None = None
-) -> Product:
-    """Создание нового товара"""
-    new_product = Product(
-        title=title,
-        category=category,
-        price=price,
-        size=size,
-        color=color,
-        quantity=quantity,
-        image_url=image_url
-    )
-    session.add(new_product)
-    await session.commit()
-    await session.refresh(new_product)
-    return new_product
+    db: AsyncSession,
+    product_data: ProductCreate,
+    current_user: User  # ✅ Зависимости через сервис
+):
+    if not current_user.is_admin:
+        raise PermissionError("Admin rights required")
+    
+    async with db.begin():
+        product = Product(**product_data.dict())
+        db.add(product)
+        await db.commit()
+        return product
 
 async def update_product_data(
     session: AsyncSession,
