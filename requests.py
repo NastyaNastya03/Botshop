@@ -108,13 +108,12 @@ async def update_product_data(product_data: UpdateProduct):
         await session.commit()
 
 async def update_product_quantity(product_id: int, new_quantity: int):
-    # Логика для обновления количества товара в базе
-    product = await db.query(Product).filter(Product.id == product_id).first()
-    if product:
+    async with async_session() as session:
+    product = await session.scalar(select(Product).where(Product.id == product_id))
+    if not product:
+            raise HTTPException(404, "Product not found")
         product.quantity = new_quantity
-        await db.commit()  # Сохраняем изменения в базе
-    else:
-        raise ValueError("Product not found")
+        await session.commit()
 
 async def create_order(
     tg_id: int,
@@ -124,50 +123,56 @@ async def create_order(
     payment_method: str,
     notes: str | None,
     timestamp: date | None,
-    async_session: AsyncSession
+    session: AsyncSession       # <- вот сюда придёт готовая сессия из Depends
 ) -> None:
+    # 1) Получаем/создаем пользователя
+    user = await add_user(tg_id)
 
-    user = await add_user(tg_id)  #
-    product_ids = [it.id for it in items]
-    async with async_session() as session:
+    # 2) Читаем товары
+    ids = [it.id for it in items]
+    result = await session.execute(select(Product).where(Product.id.in_(ids)))
+    products = {p.id: p for p in result.scalars().all()}
 
-        result = await session.execute(select(Product).where(Product.id.in_(product_ids)))
-        products = {p.id: p for p in result.scalars().all()}
+    # 3) Проверяем и уменьшаем остатки
+    for it in items:
+        prod = products.get(it.id)
+        if not prod:
+            raise HTTPException(404, f"Product {it.id} not found")
+        if prod.quantity < it.quantity:
+            raise HTTPException(400, f"Not enough stock for {prod.title}")
+        prod.quantity -= it.quantity
+        session.add(prod)
 
-        for it in items:
-            prod = products.get(it.id)
-            if not prod:
-                raise HTTPException(404, f"Product {it.id} not found")
-            if prod.quantity < it.quantity:
-                raise HTTPException(400, f"Not enough stock for {prod.title}")
+    # 4) Считаем сумму и кол-во
+    total_sum = sum(products[it.id].price * it.quantity for it in items)
+    total_qty = sum(it.quantity for it in items)
+    order_date = timestamp or date.today()
 
-            prod.quantity -= it.quantity
-            session.add(prod)  
+    # 5) Создаем заказ
+    new_order = Order(
+        user=user.id,
+        timestamp=order_date,
+        order_sum=total_sum,
+        shipping_address=shipping_address,
+        city=city,
+        payment_method=payment_method,
+        quantity=total_qty,
+        email=user.email or "",
+        phone=user.phone or "",
+        notes=notes
+    )
+    session.add(new_order)
+    await session.flush()  # получаем new_order.id
 
-        total_sum = sum(products[it.id].price * it.quantity for it in items)
-        total_qty = sum(it.quantity for it in items)
-        order_date = timestamp or date.today()
-
-        new_order = Order(
-            user=user.id,
-            timestamp=order_date,
-            order_sum=total_sum,
-            shipping_address=shipping_address,
-            city=city,
-            payment_method=payment_method,
-            quantity=total_qty,
-            email=user.email or "",
-            phone=user.phone or "",
-            notes=notes
-        )
-        session.add(new_order)
-        await session.flush()  
-
-        for it in items:
-            op = OrderProducts(
+    # 6) Связываем order_products
+    for it in items:
+        session.add(
+            OrderProducts(
                 order_id=new_order.id,
                 product_id=it.id,
                 quantity=it.quantity
             )
-            session.add(op)
-        await session.commit()
+        )
+
+    # 7) Финальный коммит
+    await session.commit()
