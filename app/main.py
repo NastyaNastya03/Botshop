@@ -1,20 +1,17 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, Body
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import date
 from typing import List
-from admin import router as admin_router
-from upload_products import router as upload_router
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.models import User, Product, Order
 from app.db import get_async_session
+from app.models import init_db
+from app.models.db import get_async_session
+from app.routers import admin_router, upload_router, order_router, product_router
+from app.config import settings
 
-
-
-from models import init_db
-import requests as rq
-from schemas import CreateOrder, CreateProduct, CompleteOrder, CompleteProduct, ProductOut, OrderOut, UpdateProduct
 import os
 
 @asynccontextmanager
@@ -32,8 +29,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.include_router(admin_router)
-app.include_router(upload_router)
+app.include_router(admin_router, prefix="/api/admin", tags=["Admin"])
+app.include_router(upload_router, prefix="/api/upload", tags=["Upload"])
+app.include_router(order_router, prefix="/api/orders", tags=["Orders"])
+app.include_router(product_router, prefix="/api/products", tags=["Products"])
 
 @app.get("/")
 async def root():
