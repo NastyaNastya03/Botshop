@@ -37,3 +37,15 @@ async def mark_product_completed(product: CompleteProduct, db: AsyncSession = De
 async def update_product_info(product: UpdateProduct, db: AsyncSession = Depends(get_async_session)):
     await update_product_data(db, product)
     return {"status": "updated"}
+    
+@router.post("/", response_model=ProductOut)
+async def create_product(
+    product_data: ProductCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        product = await ProductService.create(db, product_data, current_user)
+        return product
+    except PermissionError as e:
+        raise HTTPException(403, str(e))
