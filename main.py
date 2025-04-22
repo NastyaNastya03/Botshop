@@ -64,46 +64,18 @@ async def is_admin(tg_id: int):
     return {"isAdmin": False}
 
 @app.post("/api/order/create")
-async def create_order(order: CreateOrder, session: AsyncSession = Depends(get_async_session)):
+async def create_order(order: CreateOrder):
     
-    user = await rq.add_user(order.tg_id)
-
-    
-    product_ids = [item['id'] for item in order.items]
-    stmt = select(Product).where(Product.id.in_(product_ids))
-    result = await session.execute(stmt)
-    products = result.scalars().all()
-
-    
-    products_map = {p.id: p for p in products}
-    for item in order.items:
-        product = products_map.get(item['id'])
-        if not product:
-            raise HTTPException(status_code=400, detail=f"Товар {item['id']} не найден")
-        if product.quantity < item['quantity']:
-            raise HTTPException(status_code=400, detail=f"Недостаточно товара: {product.title}")
-    for item in order.items:
-        product = products_map[item['id']]
-        product.quantity -= item['quantity']
-    total = sum(products_map[i['id']].price * i['quantity'] for i in order.items)
-    new_order = Order(
-        user=user.id,
-        timestamp=order.timestamp or date.today(),
-        order_sum=total,
+    await rq.create_order(
+        tg_id=order.tg_id,
+        items=order.items,
         shipping_address=order.shipping_address,
         city=order.city,
         payment_method=order.payment_method,
-        quantity=sum(item['quantity'] for item in order.items),
-        email="example@example.com",
-        phone="79998887766"
+        notes=order.notes,
+        timestamp=order.timestamp,
+        async_session=session
     )
-    session.add(new_order)
-    await session.flush()  
-    for item in order.items:
-        op = OrderProducts(order_id=new_order.id, product_id=item['id'], quantity=item['quantity'])
-        session.add(op)
-
-    await session.commit()
     return {"status": "ok"}
 
 @app.post("/api/product/create")
