@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 from datetime import date
 from decimal import Decimal
+from .product import ProductOut
 
 class CreateOrder(BaseModel):
     tg_id: int
@@ -13,6 +14,10 @@ class CreateOrder(BaseModel):
     notes: Optional[str] = None
     timestamp: Optional[date] = None
 
+class OrderItem(BaseModel):
+    product_id: int
+    quantity: int
+    
 class CompleteOrder(BaseModel):
     id: int
 
