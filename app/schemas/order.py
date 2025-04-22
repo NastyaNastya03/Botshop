@@ -3,6 +3,8 @@ from typing import Optional, List
 from datetime import date
 from decimal import Decimal
 from .product import ProductOut
+from .base import BaseModelWithConfig
+from .product import ProductSchema
 
 class CreateOrder(BaseModel):
     tg_id: int
@@ -35,3 +37,16 @@ class OrderOut(BaseModel):
     phone: str
     class Config:
         from_attributes = True
+
+class OrderSchema(BaseModelWithConfig):
+    id: int
+    user: int
+    timestamp: date
+    products: List[ProductSchema]
+    order_sum: Decimal
+    shipping_address: str
+    city: str
+    payment_method: str
+    quantity: int
+    email: str
+    phone: str
