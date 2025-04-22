@@ -50,9 +50,11 @@ class Order(Base):
      
 class OrderProducts(Base):
     __tablename__ = 'order_products'
-    
-    order_id: Mapped[int] = mapped_column(ForeignKey('orders.id'), primary_key=True)
-    product_id: Mapped[int] = mapped_column(ForeignKey('products.id'), primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    order_id: Mapped[int] = mapped_column(ForeignKey('orders.id'))
+    product_id: Mapped[int] = mapped_column(ForeignKey('products.id'))
+    quantity: Mapped[int] = mapped_column(Integer)
+
     
 class Admin(User):
     __tablename__ = "admins"
