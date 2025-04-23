@@ -6,6 +6,10 @@ from .product import ProductOut
 from .base import BaseModelWithConfig
 from .product import ProductSchema
 
+class OrderItem(BaseModel):
+    product_id: int
+    quantity: int
+
 class CreateOrder(BaseModel):
     tg_id: int
     items: List[OrderItem]
@@ -15,10 +19,6 @@ class CreateOrder(BaseModel):
     payment_method: str
     notes: Optional[str] = None
     timestamp: Optional[date] = None
-
-class OrderItem(BaseModel):
-    product_id: int
-    quantity: int
     
 class CompleteOrder(BaseModel):
     id: int
