@@ -1,9 +1,10 @@
-from sqlalchemy import select, update
+rom sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
 from decimal import Decimal
 from app.models.product import Product
-from app.schemas.product import UpdateProduct
+from app.schemas.product import UpdateProduct, CreateProduct
+from app.models.user import User
 
 async def get_all_products(session: AsyncSession) -> list[Product]:
     """Получение всех товаров"""
@@ -12,7 +13,7 @@ async def get_all_products(session: AsyncSession) -> list[Product]:
 
 async def create_product(
     db: AsyncSession,
-    product_data: ProductCreate,
+    product_data: CreateProduct,
     current_user: User  # ✅ Зависимости через сервис
 ):
     if not current_user.is_admin:
