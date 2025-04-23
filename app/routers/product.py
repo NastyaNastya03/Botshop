@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.product import ProductOut, CreateProduct, UpdateProduct, CompleteProduct
+from app.models.user import User
 from app.services.product_service import (
     get_all_products,
     get_product_by_id,
@@ -8,7 +9,7 @@ from app.services.product_service import (
     update_product_data,
     complete_product
 )
-from app.models.db import get_async_session
+from app.models.base import get_async_session
 
 router = APIRouter(prefix="/api/products", tags=["Products"])
 
@@ -40,7 +41,7 @@ async def update_product_info(product: UpdateProduct, db: AsyncSession = Depends
     
 @router.post("/", response_model=ProductOut)
 async def create_product(
-    product_data: ProductCreate,
+    product_data: CreateProduct,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
