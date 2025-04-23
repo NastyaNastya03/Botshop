@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.user_service import add_user, check_admin_status
-from app.models.db import get_async_session
+from app.models.base import get_async_session
 
 router = APIRouter(prefix="/api/users", tags=["Users"])
 
