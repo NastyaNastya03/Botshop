@@ -5,6 +5,7 @@ from .dependencies import get_db
 import csv
 from io import StringIO
 from decimal import Decimal
+from app.db import async_session
 
 router = APIRouter()
 
