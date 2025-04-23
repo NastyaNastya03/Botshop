@@ -5,7 +5,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
 from app.models import Order, OrderProducts
-from app.schemas.order import OrderItem
+from app.schemas.order import OrderItem, CreateOrder, OrderOut
+from app.db import session
 
 class OrderService:
     def __init__(self, db: AsyncSession):
@@ -22,7 +23,7 @@ async def get_orders(
     )
     return result.all()
 
-async def create_order(self, order_data: OrderCreate) -> OrderOut:
+async def create_order(self, order_data: CreateOrder) -> OrderOut:
     """Создание нового заказа"""
     from app.services.user_service import add_user
     
@@ -54,13 +55,12 @@ async def create_order(self, order_data: OrderCreate) -> OrderOut:
         user=user.id,
         timestamp=order_date,
         order_sum=total_sum,
-        shipping_address=shipping_address,
+        shopping_address=shopping_address,
         city=city,
         payment_method=payment_method,
         quantity=total_qty,
         email=user.email or "",
         phone=user.phone or "",
-        notes=notes
     )
     session.add(new_order)
     await session.flush()
