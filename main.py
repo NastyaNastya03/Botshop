@@ -1,4 +1,4 @@
-from contextlib import asynccontextmanager
+rom contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,12 +9,17 @@ import os
 from typing import List
 from admin import router as admin_router
 from upload_products import router as upload_router
+import asyncio
 
 @asynccontextmanager
-async def lifespan(app_: FastAPI):
-    await init_db()
-    print('Bot is ready')
-    yield
+async def lifespan(app: FastAPI):
+    try:
+        await init_db()
+        print('Database initialized')
+        yield
+    except Exception as e:
+        print(f'Startup error: {e}')
+        raise
 
 app = FastAPI(title="To Do App", lifespan=lifespan)
 
@@ -29,6 +34,11 @@ app.add_middleware(
 # Подключаем роутеры
 app.include_router(admin_router)
 app.include_router(upload_router)
+
+# Keep-alive background task
+async def keep_app_alive():
+    while True:
+        await asyncio.sleep(10)
 
 @app.get("/")
 async def root():
@@ -126,14 +136,6 @@ async def get_product_route(product_id: int):
             return product
     raise HTTPException(status_code=404, detail="Product not found")
 
-@app.patch("/api/product/increase/{product_id}")
-async def increase_quantity(
-    product_id: int,
-    session: AsyncSession = Depends(get_async_session)
-):
-    await rq.increase_product_quantity(product_id, session)
-    return {"status": "quantity increased"}
-
 @app.patch("/api/product/decrease/{product_id}")
 async def decrease_quantity(
     product_id: int,
@@ -167,4 +169,10 @@ async def bulk_update_quantities(
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 8000)),
+        workers=2,
+        timeout_keep_alive=60
+    )
