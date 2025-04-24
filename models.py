@@ -7,7 +7,7 @@ from decimal import Decimal
 
 engine = create_async_engine(settings.DATABASE_URL, echo=True)
 async_session = async_sessionmaker(bind=engine, expire_on_commit=False)
-async def get_async_session() -> AsyncSession:
+async def get_async_session() -> async_session:
     async with async_session() as session:
         yield session
 
