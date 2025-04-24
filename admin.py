@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from models import get_async_session, User
-from requests import rq
+import requests as rq
 
 router = APIRouter(prefix="/admin")
 
