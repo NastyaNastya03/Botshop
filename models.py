@@ -22,8 +22,8 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True) #уникальный индификатор 
     tg_id = mapped_column(BigInteger)                 #id по тг
     role: Mapped[str] = mapped_column(String(10))
-    email: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
-    phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    #email: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    #phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
 
 class Product(Base):
     __tablename__ = 'products'
