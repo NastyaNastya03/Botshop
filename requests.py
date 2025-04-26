@@ -11,11 +11,12 @@ from fastapi import HTTPException
 #Пользователи
 async def add_user(tg_id) -> User:
     async with async_session() as session:
-        user = await session.scalar(select(User).where(User.tg_id == tg_id))
+        stmt = select(User).where(User.tg_id == tg_id)
+        user = await session.scalar(stmt)
         if user:
             return user
         
-        new_user = User(tg_id=tg_id)
+        new_user = User(tg_id=tg_id, role='user')  # Явно указываем обязательные поля
         session.add(new_user)
         await session.commit()
         await session.refresh(new_user)
