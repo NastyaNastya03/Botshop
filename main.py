@@ -141,8 +141,22 @@ async def decrease_quantity(
     product_id: int,
     session: AsyncSession = Depends(get_async_session)
 ):
-    await rq.decrease_product_quantity(product_id, session)
-    return {"status": "quantity decreased"}
+    try:
+        product = await rq.decrease_product_quantity(product_id, session)
+        return JSONResponse({
+            "status": "success",
+            "new_quantity": product.quantity,
+            "product_id": product.id,
+            "min_quantity": product.min_quantity
+        })
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
 
 @app.patch("/api/product/increase/{product_id}", response_model=ProductOut)
 async def increase_quantity(
@@ -150,12 +164,16 @@ async def increase_quantity(
     session: AsyncSession = Depends(get_async_session)
 ):
     try:
-        return await rq.increase_product_quantity(product_id, session)
+        product = await rq.increase_product_quantity(product_id, session)
+        return product
     except HTTPException as he:
-        raise he  # Пробрасываем HTTPException как есть
+        raise he
     except Exception as e:
         await session.rollback()
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
 
 @app.patch("/api/products/update-quantities")
 async def bulk_update_quantities(
